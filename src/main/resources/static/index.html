@@ -14,34 +14,39 @@
         </header>
 
         <main>
-            <!-- Formulário para adicionar/editar produto -->
             <section class="form-section">
                 <h2 id="form-title">Adicionar Produto</h2>
                 <form id="produto-form">
                     <input type="hidden" id="produto-id">
-                    
+
                     <div class="form-group">
                         <label for="nome">Nome:</label>
                         <input type="text" id="nome" name="nome" required maxlength="100">
                     </div>
-                    
+
                     <div class="form-group">
                         <label for="descricao">Descrição:</label>
                         <textarea id="descricao" name="descricao" maxlength="500" rows="3"></textarea>
                     </div>
-                    
+
                     <div class="form-row">
                         <div class="form-group">
                             <label for="preco">Preço (R$):</label>
                             <input type="number" id="preco" name="preco" step="0.01" min="0.01" required>
                         </div>
-                        
+
                         <div class="form-group">
                             <label for="quantidade">Quantidade:</label>
                             <input type="number" id="quantidade" name="quantidade" min="0" required>
                         </div>
                     </div>
-                    
+
+                    <div class="form-group">
+                        <label for="categoria">Categoria:</label>
+                        <select id="categoria" name="categoria" required>
+                        </select>
+                    </div>
+
                     <div class="form-actions">
                         <button type="submit" id="submit-btn">Adicionar Produto</button>
                         <button type="button" id="cancel-btn" style="display: none;">Cancelar</button>
@@ -49,18 +54,17 @@
                 </form>
             </section>
 
-            <!-- Seção de busca -->
             <section class="search-section">
                 <h2>Buscar Produtos</h2>
                 <div class="search-controls">
                     <input type="text" id="search-input" placeholder="Digite o nome do produto...">
                     <button id="search-btn">Buscar</button>
                     <button id="show-all-btn">Mostrar Todos</button>
-                    <button id="low-stock-btn">Estoque Baixo</button>
+                    <button id="reports-btn">Relatórios</button>
+                    <button id="manage-categories-btn">Gerenciar Categorias</button>
                 </div>
             </section>
 
-            <!-- Lista de produtos -->
             <section class="products-section">
                 <h2>Lista de Produtos</h2>
                 <div id="loading" class="loading" style="display: none;">Carregando...</div>
@@ -74,11 +78,11 @@
                                 <th>Descrição</th>
                                 <th>Preço</th>
                                 <th>Quantidade</th>
+                                <th>Categoria</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody id="produtos-tbody">
-                            <!-- Produtos serão carregados aqui via JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -86,7 +90,111 @@
         </main>
     </div>
 
+    <div id="categories-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Gerenciar Categorias</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <section class="form-section">
+                    <h3 id="category-form-title">Adicionar Categoria</h3>
+                    <form id="categoria-form">
+                        <input type="hidden" id="categoria-id">
+
+                        <div class="form-group">
+                            <label for="categoria-nome">Nome:</label>
+                            <input type="text" id="categoria-nome" name="nome" required maxlength="100">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="categoria-descricao">Descrição:</label>
+                            <textarea id="categoria-descricao" name="descricao" maxlength="500" rows="2"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" id="category-submit-btn">Adicionar Categoria</button>
+                            <button type="button" id="category-cancel-btn" style="display: none;">Cancelar</button>
+                        </div>
+                    </form>
+                </section>
+
+                <section class="categories-list-section">
+                    <h3>Lista de Categorias</h3>
+                    <div id="categories-loading" class="loading" style="display: none;">Carregando...</div>
+                    <div id="categories-error-message" class="error-message" style="display: none;"></div>
+                    <div id="categories-container">
+                        <table id="categories-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Descrição</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="categories-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div id="reports-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Relatórios</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <section class="reports-section">
+                    <div class="report-controls">
+                        <h3>Estoque Baixo</h3>
+                        <div class="form-group">
+                            <label for="stock-limit">Quantidade limite:</label>
+                            <input type="number" id="stock-limit" value="10" min="0">
+                            <button id="load-low-stock-btn">Carregar</button>
+                        </div>
+                    </div>
+
+                    <div class="report-controls">
+                        <h3>Valor Total do Estoque</h3>
+                        <button id="load-stock-value-btn">Calcular Valor Total</button>
+                        <div id="stock-value-display" class="stock-value"></div>
+                    </div>
+
+                    <div id="reports-loading" class="loading" style="display: none;">Carregando...</div>
+                    <div id="reports-error-message" class="error-message" style="display: none;"></div>
+                    <div id="reports-container">
+                        <table id="reports-table" style="display: none;">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nome</th>
+                                    <th>Descrição</th>
+                                    <th>Preço</th>
+                                    <th>Quantidade</th>
+                                    <th>Categoria</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-tbody">
+                            </tbody>
+                        </table>
+                        <div id="pagination-controls" style="display: none;">
+                            <button id="prev-page-btn" disabled>Anterior</button>
+                            <span id="page-info"></span>
+                            <button id="next-page-btn" disabled>Próxima</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
+
 

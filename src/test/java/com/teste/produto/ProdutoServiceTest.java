@@ -1,6 +1,9 @@
 package com.teste.produto;
 
+import com.teste.produto.exception.NomeJaExisteException;
+import com.teste.produto.model.Categoria;
 import com.teste.produto.model.Produto;
+import com.teste.produto.repository.CategoriaRepository;
 import com.teste.produto.repository.ProdutoRepository;
 import com.teste.produto.service.ProdutoService;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,6 +12,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -25,19 +32,28 @@ class ProdutoServiceTest {
     @Mock
     private ProdutoRepository produtoRepository;
 
+    @Mock
+    private CategoriaRepository categoriaRepository;
+
     @InjectMocks
     private ProdutoService produtoService;
 
     private Produto produto;
+    private Categoria categoria;
 
     @BeforeEach
     void setUp() {
+        categoria = new Categoria();
+        categoria.setId(1L);
+        categoria.setNome("Categoria Teste");
+
         produto = new Produto();
         produto.setId(1L);
         produto.setNome("Produto Teste");
         produto.setDescricao("Descrição do produto teste");
         produto.setPreco(new BigDecimal("99.99"));
         produto.setQuantidade(10);
+        produto.setCategoria(categoria);
     }
 
     @Test
@@ -99,8 +115,8 @@ class ProdutoServiceTest {
         when(produtoRepository.existsByNomeIgnoreCase(anyString())).thenReturn(true);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        NomeJaExisteException exception = assertThrows(
+            NomeJaExisteException.class,
             () -> produtoService.salvar(novoProduto)
         );
 
@@ -174,6 +190,97 @@ class ProdutoServiceTest {
         assertEquals("Produto não encontrado com ID: 1", exception.getMessage());
         verify(produtoRepository).existsById(1L);
         verify(produtoRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void testBuscarPorNome() {
+        // Arrange
+        List<Produto> produtos = Arrays.asList(produto);
+        when(produtoRepository.findByNomeContainingIgnoreCase("Produto")).thenReturn(produtos);
+
+        // Act
+        List<Produto> resultado = produtoService.buscarPorNome("Produto");
+
+        // Assert
+        assertEquals(1, resultado.size());
+        assertEquals(produto.getNome(), resultado.get(0).getNome());
+        verify(produtoRepository).findByNomeContainingIgnoreCase("Produto");
+    }
+
+    @Test
+    void testBuscarProdutosComQuantidadeBaixa() {
+        // Arrange
+        List<Produto> produtos = Arrays.asList(produto);
+        when(produtoRepository.findProdutosComQuantidadeBaixa(10)).thenReturn(produtos);
+
+        // Act
+        List<Produto> resultado = produtoService.buscarProdutosComQuantidadeBaixa(10);
+
+        // Assert
+        assertEquals(1, resultado.size());
+        assertEquals(produto.getNome(), resultado.get(0).getNome());
+        verify(produtoRepository).findProdutosComQuantidadeBaixa(10);
+    }
+
+    @Test
+    void testBuscarProdutosComQuantidadeBaixaPaginado() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Produto> page = new PageImpl<>(Arrays.asList(produto), pageable, 1);
+        when(produtoRepository.findProdutosComQuantidadeBaixa(10, pageable)).thenReturn(page);
+
+        // Act
+        Page<Produto> resultado = produtoService.buscarProdutosComQuantidadeBaixa(10, pageable);
+
+        // Assert
+        assertEquals(1, resultado.getContent().size());
+        assertEquals(produto.getNome(), resultado.getContent().get(0).getNome());
+        assertEquals(0, resultado.getNumber());
+        verify(produtoRepository).findProdutosComQuantidadeBaixa(10, pageable);
+    }
+
+    @Test
+    void testCalcularValorTotalEstoque() {
+        // Arrange
+        BigDecimal valorTotal = new BigDecimal("999.90");
+        when(produtoRepository.calcularValorTotalEstoque()).thenReturn(valorTotal);
+
+        // Act
+        BigDecimal resultado = produtoService.calcularValorTotalEstoque();
+
+        // Assert
+        assertEquals(valorTotal, resultado);
+        verify(produtoRepository).calcularValorTotalEstoque();
+    }
+
+    @Test
+    void testCalcularValorTotalEstoqueNull() {
+        // Arrange
+        when(produtoRepository.calcularValorTotalEstoque()).thenReturn(null);
+
+        // Act
+        BigDecimal resultado = produtoService.calcularValorTotalEstoque();
+
+        // Assert
+        assertEquals(BigDecimal.ZERO, resultado);
+        verify(produtoRepository).calcularValorTotalEstoque();
+    }
+
+    @Test
+    void testBuscarProdutosPorCategoria() {
+        // Arrange
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Produto> page = new PageImpl<>(Arrays.asList(produto), pageable, 1);
+        when(produtoRepository.findByCategoriaId(1L, pageable)).thenReturn(page);
+
+        // Act
+        Page<Produto> resultado = produtoService.buscarProdutosPorCategoria(1L, pageable);
+
+        // Assert
+        assertEquals(1, resultado.getContent().size());
+        assertEquals(produto.getNome(), resultado.getContent().get(0).getNome());
+        assertEquals(categoria.getId(), resultado.getContent().get(0).getCategoria().getId());
+        verify(produtoRepository).findByCategoriaId(1L, pageable);
     }
 }
 
